@@ -37,11 +37,14 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
-        self.rect = self.rect.move(x, y)
+        self.image = pygame.transform.scale(self.image, (150, 150))
+        self.rect = self.rect.move(200, 200)
 
     def cut_sheet(self, sheet, columns, rows):
+
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
+
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
@@ -51,6 +54,8 @@ class AnimatedSprite(pygame.sprite.Sprite):
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(1, 0)
+        self.image = pygame.transform.scale(self.image, (75, 75))
 
 
 # группы спрайтов
@@ -66,21 +71,21 @@ def terminate():
 if __name__ == '__main__':
 
     running = True
-
-    dragon = AnimatedSprite(load_image("Pink_Monster_Run_6.png"), 6, 1, 150, 150)
-
+    dragon = AnimatedSprite(load_image("Run (32x32).png"), 12, 1, 50, 50)
+    print(dragon)
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
+            # if event.type == pygame.KEYDOWN:
+            # if event.key == pygame.K_RIGHT:
+            # for _ in range(12):
+        screen.fill((255, 255, 255))
         all_sprites.draw(screen)
-
         dragon.update()
-
         pygame.display.flip()
-
         clock.tick(10)
 
     pygame.quit()

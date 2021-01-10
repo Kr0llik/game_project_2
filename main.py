@@ -1,6 +1,7 @@
 import sys
 import os
 import pygame
+from testing import AnimatedSprite
 
 pygame.init()
 size = width, height = 1300, 900
@@ -46,6 +47,7 @@ tile_images = {
     'empty': cropped
 }
 player_image = load_image('0_Reaper_Man_Throwing_011.png')
+
 player_image = pygame.transform.scale(player_image, (50, 50))
 
 tile_width = tile_height = 50
@@ -69,12 +71,50 @@ class Player(pygame.sprite.Sprite):
             tile_width * pos_x, tile_height * pos_y)
         self.pos = (pos_x, pos_y)
 
-    def move(self, x, y):
+    def move(self, x, y, turn='right'):
         self.pos = (x, y)
-        self.image = pygame.transform.flip(self.image, 90, 0)
-        self.rect = self.image.get_rect().move(tile_width * self.pos[0],
-                                               tile_height
-                                               * self.pos[1])
+        if turn == 'left':
+            self.image = pygame.transform.flip(player_image, 90, 0)
+        elif turn == 'right':
+            self.image = player_image
+
+        for i in range(tile_width):
+            if turn == 'right':
+                self.rect = self.image.get_rect().move(tile_width * self.pos[0] - (tile_width - i),
+                                                       tile_height
+                                                       * self.pos[1])
+                tiles_group.draw(screen)
+                player_group.draw(screen)
+                clock.tick(50)
+                pygame.display.flip()
+
+            elif turn == 'left':
+                self.rect = self.image.get_rect().move(tile_width * self.pos[0] + (tile_width - i),
+                                                       tile_height
+                                                       * self.pos[1])
+                tiles_group.draw(screen)
+                player_group.draw(screen)
+                clock.tick(50)
+                pygame.display.flip()
+
+            elif turn == 'up':
+                self.rect = self.image.get_rect().move(tile_width * self.pos[0],
+                                                       tile_height
+                                                       * self.pos[1] + (tile_height - i))
+                tiles_group.draw(screen)
+                player_group.draw(screen)
+                clock.tick(50)
+                pygame.display.flip()
+
+            elif turn == 'down':
+
+                self.rect = self.image.get_rect().move(tile_width * self.pos[0],
+                                                       tile_height
+                                                       * self.pos[1] - (tile_height - i))
+                tiles_group.draw(screen)
+                player_group.draw(screen)
+                clock.tick(50)
+                pygame.display.flip()
 
 
 def generate_level(level):
@@ -96,19 +136,19 @@ def move(player, move):
     x, y = player.pos
     if move == 'up':
         if y > 0 and level_map[y - 1][x] in '.@':
-            player.move(x, y - 1)
+            player.move(x, y - 1, turn='up')
 
     elif move == 'down':
         if y < max_height - 1 and level_map[y + 1][x] in '.@':
-            player.move(x, y + 1)
+            player.move(x, y + 1, turn='down')
 
     elif move == 'left':
         if x > 0 and level_map[y][x - 1] in '.@':
-            player.move(x - 1, y)
+            player.move(x - 1, y, turn='left')
 
     elif move == 'right':
         if x < max_width - 1 and level_map[y][x + 1] in '.@':
-            player.move(x + 1, y)
+            player.move(x + 1, y, turn='right')
 
 
 FPS = 50
