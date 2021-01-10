@@ -1,6 +1,9 @@
 import sys
 import os
 import pygame
+import and_testing
+from random import randint
+# from and_testing import bot
 from testing import AnimatedSprite
 
 view = 'right'
@@ -48,6 +51,7 @@ tile_images = {
     'empty': cropped
 }
 player_image = load_image('Run (32x32).png')
+bot_image = load_image('Run (322x32).png')
 
 tile_width = tile_height = 50
 max_height = height // tile_height
@@ -91,7 +95,10 @@ class Player(pygame.sprite.Sprite):
                                                        tile_height
                                                        * self.pos[1])
                 tiles_group.draw(screen)
+                and_testing.tiles_group.draw(screen)
                 player_group.draw(screen)
+                and_testing.player_group.draw(screen)
+
                 clock.tick(120)
                 pygame.display.flip()
 
@@ -100,7 +107,10 @@ class Player(pygame.sprite.Sprite):
                                                        tile_height
                                                        * self.pos[1])
                 tiles_group.draw(screen)
+                and_testing.tiles_group.draw(screen)
                 player_group.draw(screen)
+                and_testing.player_group.draw(screen)
+
                 clock.tick(120)
                 pygame.display.flip()
 
@@ -109,7 +119,10 @@ class Player(pygame.sprite.Sprite):
                                                        tile_height
                                                        * self.pos[1] + (tile_height - i))
                 tiles_group.draw(screen)
+                and_testing.tiles_group.draw(screen)
                 player_group.draw(screen)
+                and_testing.player_group.draw(screen)
+
                 clock.tick(120)
                 pygame.display.flip()
 
@@ -119,7 +132,10 @@ class Player(pygame.sprite.Sprite):
                                                        tile_height
                                                        * self.pos[1] - (tile_height - i))
                 tiles_group.draw(screen)
+                and_testing.tiles_group.draw(screen)
                 player_group.draw(screen)
+                and_testing.player_group.draw(screen)
+
                 clock.tick(120)
                 pygame.display.flip()
 
@@ -137,8 +153,91 @@ class Player(pygame.sprite.Sprite):
 
 
 
+class Player_bot(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(player_group, all_sprites)
+        self.frames = []
+        self.cut_sheet(bot_image, 12, 1, pos_x, pos_y)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image, (35, 35))
+        self.pos = (pos_x, pos_y)
+
+    def cut_sheet(self, sheet, columns, rows, pos_x, pos_y):
+        self.rect = pygame.Rect(tile_width * pos_x + 6, tile_height * pos_y + 6,
+                                sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def move(self, x, y, turn='right'):
+        print('AEAe')
+        self.pos = (x, y)
+
+        for i in range(tile_width):
+            self.update(turn)
+            if turn == 'right':
+                self.rect = self.image.get_rect().move(tile_width * self.pos[0] - (tile_width - i),
+                                                       tile_height
+                                                       * self.pos[1])
+                tiles_group.draw(screen)
+                and_testing.player_group.draw(screen)
+                player_group.draw(screen)
+
+                clock.tick(120)
+                pygame.display.flip()
+
+            elif turn == 'left':
+                self.rect = self.image.get_rect().move(tile_width * self.pos[0] + (tile_width - i),
+                                                       tile_height
+                                                       * self.pos[1])
+                tiles_group.draw(screen)
+                and_testing.player_group.draw(screen)
+                player_group.draw(screen)
+
+                clock.tick(120)
+                pygame.display.flip()
+
+            elif turn == 'up':
+                self.rect = self.image.get_rect().move(tile_width * self.pos[0],
+                                                       tile_height
+                                                       * self.pos[1] + (tile_height - i))
+                tiles_group.draw(screen)
+                and_testing.player_group.draw(screen)
+                player_group.draw(screen)
+
+                clock.tick(120)
+                pygame.display.flip()
+
+            elif turn == 'down':
+                self.rect = self.image.get_rect().move(tile_width * self.pos[0],
+                                                       tile_height
+                                                       * self.pos[1] - (tile_height - i))
+                tiles_group.draw(screen)
+                and_testing.player_group.draw(screen)
+                player_group.draw(screen)
+
+                clock.tick(120)
+                pygame.display.flip()
+
+    def update(self, turn):
+        global view
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image, (35, 35))
+        if turn == 'left' or view == 'left' and turn != 'right':
+            view = 'left'
+            self.image = pygame.transform.flip(self.frames[self.cur_frame], 90, 0)
+        elif turn == 'right' or view == 'right' and turn != 'left':
+            view = 'right'
+            self.image = self.frames[self.cur_frame]
+
+
 def generate_level(level):
-    new_player, x, y = None, None, None
+    new_player, new_player1, x, y = None, None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -151,6 +250,20 @@ def generate_level(level):
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
+def generate_level_bot(level):
+    new_player, x, y = None, None, None
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            # print(x, y)
+            if level[y][x] in '@.':
+                Tile('empty', x, y)
+            elif level[y][x] == '#':
+                Tile('wall', x, y)
+            elif level[y][x] == '!':
+                Tile('empty', x, y)
+                new_player = Player_bot(x, y)
+    # вернем игрока, а также размер поля в клетках
+    return new_player, x, y
 
 def move(player, move):
     x, y = player.pos
@@ -222,10 +335,29 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
+def bot_go(pos, level):
+    s = randint(1, 4)
+    if level[pos[1] - 1][pos[0]] != '#' and s == 1:
+        move(bot, 'up')
+
+    elif level[pos[1]][pos[0] - 1] != '#' and s == 2:
+        move(bot, 'left')
+
+    elif level[pos[1] + 1][pos[0]] != '#' and s == 3:
+        move(bot, 'down')
+
+    elif level[pos[1]][pos[0] + 1] != '#' and s == 4:
+        move(bot, 'right')
+
+
 if __name__ == '__main__':
     start_screen()
     level_map = load_level('level1.txt')
+    bot, level_x, level_y = generate_level_bot(level_map)
+
     player, level_x, level_y = generate_level(level_map)
+
+    print(bot in and_testing.player_group)
 
     running = True
 
@@ -233,6 +365,10 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
+        # print(bot, player.pos, bot.pos)
+
+        # print(bot)
 
         if pygame.key.get_pressed()[pygame.K_DOWN]:
             move(player, 'down')
@@ -246,10 +382,15 @@ if __name__ == '__main__':
         if pygame.key.get_pressed()[pygame.K_RIGHT]:
             move(player, 'right')
 
+        bot_go(bot.pos, level_map)
+
         all_sprites.draw(screen)
         tiles_group.draw(screen)
+        and_testing.all_sprites.draw(screen)
+        and_testing.player_group.draw(screen)
         player_group.draw(screen)
 
         clock.tick(FPS)
         pygame.display.flip()
+
     pygame.quit()
