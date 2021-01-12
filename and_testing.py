@@ -3,14 +3,14 @@ import os
 import pygame
 from random import randint
 import more_testing
-from testing import AnimatedSprite
+# from testing import AnimatedSprite
 
 view = 'right'
 pygame.init()
 size = width, height = 1300, 900
 screen = pygame.display.set_mode(size)
-pygame.display.set_caption('Перемещение героя')
-screen.fill((255, 255, 255))
+pygame.display.set_caption('game')
+# screen.fill((255, 255, 255))
 clock = pygame.time.Clock()
 player = None
 
@@ -88,7 +88,7 @@ def move(bot_p, move):
 FPS = 50
 
 
-def terminate():
+def terminate1():
     pygame.quit()
     sys.exit()
 
@@ -115,7 +115,7 @@ def start_screen():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                terminate()
+                terminate1()
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
                 return  # начинаем игру
@@ -134,21 +134,6 @@ def load_level(filename):
 
     # дополняем каждую строку пустыми клетками ('.')
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
-
-
-def bot_go(pos, level):
-    s = randint(1, 4)
-    if level[pos[1] - 1][pos[0]] != '#' and s == 1:
-        move(bot, 'up')
-
-    elif level[pos[1]][pos[0] - 1] != '#' and s == 2:
-        move(bot, 'left')
-
-    elif level[pos[1] + 1][pos[0]] != '#' and s == 3:
-        move(bot, 'down')
-
-    elif level[pos[1]][pos[0] + 1] != '#' and s == 4:
-        move(bot, 'right')
 
 
 if __name__ == '__main__':

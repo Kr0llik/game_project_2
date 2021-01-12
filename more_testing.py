@@ -1,17 +1,19 @@
 import sys
 import os
 import pygame
-import and_testing
+import time
 from random import randint
-# from and_testing import bot
-from testing import AnimatedSprite
+import and_testing
+from multiprocessing import Process
+from threading import Thread
+import testing
 
 view = 'right'
 pygame.init()
 size = width, height = 1300, 900
 screen = pygame.display.set_mode(size)
-pygame.display.set_caption('Перемещение героя')
-screen.fill((255, 255, 255))
+pygame.display.set_caption('game')
+# screen.fill((255, 255, 255))
 clock = pygame.time.Clock()
 player = None
 
@@ -34,6 +36,7 @@ def load_image(name, colorkey=None):
 
 
 # группы спрайтов
+walls = []
 
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
@@ -77,7 +80,7 @@ class Player(pygame.sprite.Sprite):
         self.pos = (pos_x, pos_y)
 
     def cut_sheet(self, sheet, columns, rows, pos_x, pos_y):
-        self.rect = pygame.Rect(tile_width * pos_x, tile_height * pos_y, sheet.get_width() // columns,
+        self.rect = pygame.Rect(pos_x, pos_y, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
@@ -152,7 +155,6 @@ class Player(pygame.sprite.Sprite):
             self.image = self.frames[self.cur_frame]
 
 
-
 class Player_bot(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
@@ -164,7 +166,7 @@ class Player_bot(pygame.sprite.Sprite):
         self.pos = (pos_x, pos_y)
 
     def cut_sheet(self, sheet, columns, rows, pos_x, pos_y):
-        self.rect = pygame.Rect(tile_width * pos_x + 6, tile_height * pos_y + 6,
+        self.rect = pygame.Rect(pos_x + 10, pos_y,
                                 sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
@@ -174,7 +176,6 @@ class Player_bot(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def move(self, x, y, turn='right'):
-        print('AEAe')
         self.pos = (x, y)
 
         for i in range(tile_width):
@@ -246,9 +247,10 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
-                new_player = Player(x, y)
+                new_player = Player(x * tile_width, y * tile_height)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
+
 
 def generate_level_bot(level):
     new_player, x, y = None, None, None
@@ -260,34 +262,37 @@ def generate_level_bot(level):
             elif level[y][x] == '#':
                 Tile('wall', x, y)
             elif level[y][x] == '!':
+                print(x, y)
                 Tile('empty', x, y)
-                new_player = Player_bot(x, y)
+                new_player = Player_bot(x * tile_width, y * tile_height)
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
+
 def move(player, move):
+    time.sleep(0.1)
     x, y = player.pos
     if move == 'up':
-        if y > 0 and level_map[y - 1][x] in '.@':
+        if y > 0 and level_map[y - 1][x] in '.@!':
             player.move(x, y - 1, turn='up')
 
     elif move == 'down':
-        if y < max_height - 1 and level_map[y + 1][x] in '.@':
+        if y < max_height - 1 and level_map[y + 1][x] in '.@!':
             player.move(x, y + 1, turn='down')
 
     elif move == 'left':
-        if x > 0 and level_map[y][x - 1] in '.@':
+        if x > 0 and level_map[y][x - 1] in '.@!':
             player.move(x - 1, y, turn='left')
 
     elif move == 'right':
-        if x < max_width - 1 and level_map[y][x + 1] in '.@':
+        if x < max_width - 1 and level_map[y][x + 1] in '.@!':
             player.move(x + 1, y, turn='right')
 
 
 FPS = 50
 
 
-def terminate():
+def terminate1():
     pygame.quit()
     sys.exit()
 
@@ -314,7 +319,8 @@ def start_screen():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                terminate()
+                print('exit')
+                terminate1()
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
                 return  # начинаем игру
@@ -335,62 +341,199 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
-def bot_go(pos, level):
-    s = randint(1, 4)
-    if level[pos[1] - 1][pos[0]] != '#' and s == 1:
-        move(bot, 'up')
+def bot_go(pos, level, turn):
+    if not turn is None:
+        if (pos[0] % tile_width == 0
+                and pos[1] % tile_height == 0):
+            turn = None
 
-    elif level[pos[1]][pos[0] - 1] != '#' and s == 2:
-        move(bot, 'left')
+    else:
 
-    elif level[pos[1] + 1][pos[0]] != '#' and s == 3:
-        move(bot, 'down')
+        x, y = player.pos[0] - pos[0], player.pos[1] - pos[1]
+        x_wall, y_wall = (pos[0] + 40) // tile_width, (pos[1] + 40) // tile_height
 
-    elif level[pos[1]][pos[0] + 1] != '#' and s == 4:
-        move(bot, 'right')
+        # print(player.pos[0], pos[0], player.pos[1], pos[1], x_wall, y_wall)
+        # print(level[17][9], (x_wall, y_wall))
+        # if (x_wall, y_wall) == (15, 9):
+        #     time.sleep(20)
+
+        if level[y_wall - 1][x_wall] in '.@!' and y < 0:
+            # print(level[y_wall - 1][x_wall], x_wall, y_wall, x, y)
+            turn = 'up'
+            bot.update(turn='up')
+            bot.rect = bot.rect.move(0, -2)
+            bot.pos = (bot.pos[0], bot.pos[1] - 2)
+
+        elif level[y_wall][x_wall - 1] in '.@!' and x < 0:
+            # print(level[y_wall][x_wall - 1], x_wall, y_wall, x, y)
+            turn = 'left'
+            bot.update(turn='left')
+            bot.rect = bot.rect.move(-2, 0)
+            bot.pos = (bot.pos[0] - 2, bot.pos[1])
+
+        elif level[y_wall + 1][x_wall] in '.@!' and y > 0:
+            # print(level[y_wall + 1][x_wall], x_wall, y_wall, x, y)
+            turn = 'down'
+            bot.update(turn='down')
+            bot.rect = bot.rect.move(0, 2)
+            bot.pos = (bot.pos[0], bot.pos[1] + 2)
+
+        elif level[y_wall][x_wall + 1] in '.@!' and x > 0:
+            # print(level[y_wall][x_wall + 1], x_wall, y_wall, x, y)
+            turn = 'right'
+            bot.update(turn='right')
+            bot.rect = bot.rect.move(2, 0)
+            bot.pos = (bot.pos[0] + 2, bot.pos[1])
+
+        clock.tick(120)
+        return turn
+
+
+def check_go(move):
+    x, y = player.pos[0] // tile_width, player.pos[1] // tile_height
+
+    if move == 'up':
+        print(level_map[y - 1][x], (y - 1, x))
+        if level_map[y - 1][x] in '.@!':
+            return True
+
+    elif move == 'down':
+        print(level_map[y + 1][x], (y + 1, x))
+        if level_map[y + 1][x] in '.@!':
+            return True
+
+    elif move == 'left':
+        print(level_map[y][x - 1], (y, x - 1))
+        if level_map[y][x - 1] in '.@!':
+            return True
+
+    elif move == 'right':
+        print(level_map[x + 1][y], (y, x + 1))
+        if level_map[y][x + 1] in '.@!':
+            return True
+
+    # print(player.pos[0] // tile_width + 1, player.pos[1] // tile_height + 1)
+    # print((x, y), move, player.pos)
+    return False
 
 
 if __name__ == '__main__':
     start_screen()
+
     level_map = load_level('level1.txt')
     bot, level_x, level_y = generate_level_bot(level_map)
-
+    print(level_x, level_y)
     player, level_x, level_y = generate_level(level_map)
+    print(level_x, level_y)
 
-    print(bot in and_testing.player_group)
+    # print(walls)
 
+    # print(walls)
+
+    # print(bot in and_testing.player_group)
     running = True
+
+    flag = False
+
+    tec_time = time.time()
+
+    turn, turn_2 = None, None
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        # print(bot, player.pos, bot.pos)
+        # print(bot.pos)
 
-        # print(bot)
+        # if time.time() - tec_time > 0.5:
+        turn_2 = bot_go(bot.pos, level_map, turn_2)
+        # print(turn_2)
+        # tec_time = time.time()
 
-        if pygame.key.get_pressed()[pygame.K_DOWN]:
-            move(player, 'down')
+        if not turn is None:
+            if (player.pos[0] % tile_width == 0
+                    and player.pos[1] % tile_height == 0):
+                turn = None
+            else:
+                if turn == 'down':
+                    player.update(turn='down')
+                    player.rect = player.rect.move(0, 2)
+                    player.pos = (player.pos[0], player.pos[1] + 2)
 
-        if pygame.key.get_pressed()[pygame.K_UP]:
-            move(player, 'up')
+                elif turn == 'up':
+                    player.update(turn='up')
+                    player.rect = player.rect.move(0, -2)
+                    player.pos = (player.pos[0], player.pos[1] - 2)
 
-        if pygame.key.get_pressed()[pygame.K_LEFT]:
-            move(player, 'left')
 
-        if pygame.key.get_pressed()[pygame.K_RIGHT]:
-            move(player, 'right')
+                elif turn == 'left':
+                    player.update(turn='left')
+                    player.rect = player.rect.move(-2, 0)
+                    player.pos = (player.pos[0] - 2, player.pos[1])
 
-        bot_go(bot.pos, level_map)
+
+                elif turn == 'right':
+                    player.update(turn='right')
+                    player.rect = player.rect.move(2, 0)
+                    player.pos = (player.pos[0] + 2, player.pos[1])
+
+        else:
+            key = pygame.key.get_pressed()
+
+            if key[pygame.K_DOWN]:
+                if check_go('down'):
+                    turn = 'down'
+                    player.update(turn='down')
+                    player.rect = player.rect.move(0, 2)
+                    player.pos = (player.pos[0], player.pos[1] + 2)
+
+            elif key[pygame.K_UP]:
+                if check_go('up'):
+                    turn = 'up'
+                    player.update(turn='up')
+                    player.rect = player.rect.move(0, -2)
+                    player.pos = (player.pos[0], player.pos[1] - 2)
+
+            elif key[pygame.K_LEFT]:
+                if check_go('left'):
+                    turn = 'left'
+                    player.update(turn='left')
+                    player.rect = player.rect.move(-2, 0)
+                    player.pos = (player.pos[0] - 2, player.pos[1])
+
+            elif key[pygame.K_RIGHT]:
+                if check_go('right'):
+                    turn = 'right'
+                    player.update(turn='right')
+                    player.rect = player.rect.move(2, 0)
+                    player.pos = (player.pos[0] + 2, player.pos[1])
+
+        # print(player.pos)
+
+        # print(proc.is_alive(), 3)
+
+        # if time.time() - tec_time > 0.3:
+        # proc.terminate()
+        # if not proc.is_alive():
+        # print(proc.is_alive(), 4)
+        # proc.run()
+        # Thread(target=func).start()
+        # flag_move
+
+        # flag_move = None
+        # proc.join()
+        # print(proc.is_alive()), 5
+        # tec_time = time.time()
+        # flag_move
 
         all_sprites.draw(screen)
         tiles_group.draw(screen)
-        and_testing.all_sprites.draw(screen)
+        # and_testing.all_sprites.draw(screen)
         and_testing.player_group.draw(screen)
         player_group.draw(screen)
 
         clock.tick(FPS)
         pygame.display.flip()
 
-    pygame.quit()
+pygame.quit()

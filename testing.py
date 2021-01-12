@@ -71,7 +71,7 @@ def terminate():
 if __name__ == '__main__':
 
     running = True
-    dragon = AnimatedSprite(load_image("Run (32x32).png"), 12, 1, 50, 50)
+    dragon = AnimatedSprite(load_image("Run (32x32).png"), 12, 1, 150, 50)
     print(dragon)
 
     while running:
