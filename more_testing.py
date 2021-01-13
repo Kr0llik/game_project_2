@@ -2,11 +2,9 @@ import sys
 import os
 import pygame
 import time
-from random import randint
-import and_testing
-from multiprocessing import Process
-from threading import Thread
-import testing
+
+# from random import randint
+# import and_testing
 
 view = 'right'
 pygame.init()
@@ -166,7 +164,7 @@ class Player_bot(pygame.sprite.Sprite):
         self.pos = (pos_x, pos_y)
 
     def cut_sheet(self, sheet, columns, rows, pos_x, pos_y):
-        self.rect = pygame.Rect(pos_x + 10, pos_y,
+        self.rect = pygame.Rect(pos_x, pos_y,
                                 sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
@@ -270,7 +268,6 @@ def generate_level_bot(level):
 
 
 def move(player, move):
-    time.sleep(0.1)
     x, y = player.pos
     if move == 'up':
         if y > 0 and level_map[y - 1][x] in '.@!':
@@ -341,16 +338,80 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
+def get_next_pos_bot(pos, level):
+    list_of_pos = [(player.pos[0] // tile_width, player.pos[1] // tile_height)]
+    bot_pos = (pos[0] // tile_width, pos[1] // tile_height)
+    while True:
+        size_list_of_pos = len(list_of_pos)
+        # print(list_of_pos)
+        for i in range(len(list_of_pos)):
+            # print(list_of_pos[i])
+            if (list_of_pos[i][0] + 1, list_of_pos[i][1]) == bot_pos \
+                    or (list_of_pos[i][0] - 1, list_of_pos[i][1]) == bot_pos \
+                    or (list_of_pos[i][0], list_of_pos[i][1] - 1) == bot_pos \
+                    or (list_of_pos[i][0], list_of_pos[i][1] + 1) == bot_pos:
+                # print(list_of_pos[i][0] * tile_width, list_of_pos[i][1] * tile_height, 1)
+                return (list_of_pos[i][0] * tile_width, list_of_pos[i][1] * tile_height)
+            else:
+                # print(list_of_pos[i], list_of_pos[i][0] + 1, list_of_pos[i][1], max_height, max_width)
+                # print(level[list_of_pos[i][0] + 1][list_of_pos[i][1]])
+                if list_of_pos[i][0] < max_height - 1:
+                    # print(list_of_pos[i][0], max_height - 1)
+                    if level[list_of_pos[i][1]][list_of_pos[i][0] + 1] == '.' \
+                            and (list_of_pos[i][0] + 1, list_of_pos[i][1]) not in list_of_pos:
+                        list_of_pos.append((list_of_pos[i][0] + 1, list_of_pos[i][1]))
+
+                if list_of_pos[i][1] < max_width - 1 and level[list_of_pos[i][1] + 1][list_of_pos[i][0]] == '.' \
+                        and (list_of_pos[i][0], list_of_pos[i][1] + 1) not in list_of_pos:
+                    list_of_pos.append((list_of_pos[i][0], list_of_pos[i][1] + 1))
+
+                print((list_of_pos[i][0], list_of_pos[i][1] - 1), level[list_of_pos[i][0]][list_of_pos[i][1] - 1])
+                if list_of_pos[i][1] > 0 and level[list_of_pos[i][1] - 1][list_of_pos[i][0]] == '.' \
+                        and (list_of_pos[i][0], list_of_pos[i][1] - 1) not in list_of_pos:
+                    list_of_pos.append((list_of_pos[i][0], list_of_pos[i][1] - 1))
+
+                if list_of_pos[i][0] > 0 and level[list_of_pos[i][1]][list_of_pos[i][0] - 1] == '.' \
+                        and (list_of_pos[i][0] - 1, list_of_pos[i][1]) not in list_of_pos:
+                    list_of_pos.append((list_of_pos[i][0] - 1, list_of_pos[i][1]))
+
+        if size_list_of_pos == len(list_of_pos):
+            print(pos, 2)
+            return pos
+
+
 def bot_go(pos, level, turn):
     if not turn is None:
         if (pos[0] % tile_width == 0
                 and pos[1] % tile_height == 0):
             turn = None
+            # print(pos)
+        else:
+            if turn == 'down':
+                bot.update(turn='down')
+                bot.rect = bot.rect.move(0, 2)
+                bot.pos = (bot.pos[0], bot.pos[1] + 2)
+
+            elif turn == 'up':
+                bot.update(turn='up')
+                bot.rect = bot.rect.move(0, -2)
+                bot.pos = (bot.pos[0], bot.pos[1] - 2)
+
+
+            elif turn == 'left':
+                bot.update(turn='left')
+                bot.rect = bot.rect.move(-2, 0)
+                bot.pos = (bot.pos[0] - 2, bot.pos[1])
+
+            elif turn == 'right':
+                bot.update(turn='right')
+                bot.rect = bot.rect.move(2, 0)
+                bot.pos = (bot.pos[0] + 2, bot.pos[1])
+
 
     else:
 
         x, y = player.pos[0] - pos[0], player.pos[1] - pos[1]
-        x_wall, y_wall = (pos[0] + 40) // tile_width, (pos[1] + 40) // tile_height
+        x_wall, y_wall = pos[0] // tile_width, pos[1] // tile_height
 
         # print(player.pos[0], pos[0], player.pos[1], pos[1], x_wall, y_wall)
         # print(level[17][9], (x_wall, y_wall))
@@ -385,31 +446,72 @@ def bot_go(pos, level, turn):
             bot.rect = bot.rect.move(2, 0)
             bot.pos = (bot.pos[0] + 2, bot.pos[1])
 
-        clock.tick(120)
-        return turn
+    clock.tick(80)
+    return turn
+
+
+def bot_go_2(pos, level, turn):
+
+    if not turn is None:
+        if (pos[0] % tile_width == 0
+                and pos[1] % tile_height == 0):
+            turn = None
+        else:
+            bot.update(turn='down')
+            bot.rect = bot.rect.move(2 * turn[0], 2 * turn[1])
+            bot.pos = (bot.pos[0] + (2 * turn[0]), bot.pos[1] + (2 * turn[1]))
+
+
+
+    else:
+        new_pos = get_next_pos_bot(pos, level)
+
+        print(new_pos, turn)
+
+        if new_pos[0] - pos[0] > 0:
+            x = 1
+        elif new_pos[0] - pos[0] < 0:
+            x = -1
+        else:
+            x = 0
+
+        if new_pos[1] - pos[1] > 0:
+            y = 1
+        elif new_pos[1] - pos[1] < 0:
+            y = -1
+        else:
+            y = 0
+
+        bot.update(turn='down')
+        bot.rect = bot.rect.move(2 * x, 2 * y)
+        bot.pos = (bot.pos[0] + (2 * x), bot.pos[1] + (2 * y))
+        turn = (x, y)
+
+    clock.tick(80)
+    return turn
 
 
 def check_go(move):
     x, y = player.pos[0] // tile_width, player.pos[1] // tile_height
 
     if move == 'up':
-        print(level_map[y - 1][x], (y - 1, x))
-        if level_map[y - 1][x] in '.@!':
+        # print(level_map[y - 1][x], (y - 1, x))
+        if y > 0 and level_map[y - 1][x] in '.@!':
             return True
 
     elif move == 'down':
-        print(level_map[y + 1][x], (y + 1, x))
-        if level_map[y + 1][x] in '.@!':
+        # print(level_map[y + 1][x], (y + 1, x))
+        if y < max_height - 1 and level_map[y + 1][x] in '.@!':
             return True
 
     elif move == 'left':
-        print(level_map[y][x - 1], (y, x - 1))
-        if level_map[y][x - 1] in '.@!':
+        # print(level_map[y][x - 1], (y, x - 1))
+        if x > 0 and level_map[y][x - 1] in '.@!':
             return True
 
     elif move == 'right':
-        print(level_map[x + 1][y], (y, x + 1))
-        if level_map[y][x + 1] in '.@!':
+        # print(level_map[x + 1][y], (y, x + 1))
+        if x < max_width - 1 and level_map[y][x + 1] in '.@!':
             return True
 
     # print(player.pos[0] // tile_width + 1, player.pos[1] // tile_height + 1)
@@ -422,9 +524,9 @@ if __name__ == '__main__':
 
     level_map = load_level('level1.txt')
     bot, level_x, level_y = generate_level_bot(level_map)
-    print(level_x, level_y)
+    # print(level_x, level_y)
     player, level_x, level_y = generate_level(level_map)
-    print(level_x, level_y)
+    # print(level_x, level_y)
 
     # print(walls)
 
@@ -440,6 +542,7 @@ if __name__ == '__main__':
     turn, turn_2 = None, None
 
     while running:
+        # get_next_pos_bot(bot.pos, level_map)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -447,7 +550,7 @@ if __name__ == '__main__':
         # print(bot.pos)
 
         # if time.time() - tec_time > 0.5:
-        turn_2 = bot_go(bot.pos, level_map, turn_2)
+        turn_2 = bot_go_2(bot.pos, level_map, turn_2)
         # print(turn_2)
         # tec_time = time.time()
 
@@ -515,7 +618,7 @@ if __name__ == '__main__':
 
         # if time.time() - tec_time > 0.3:
         # proc.terminate()
-        # if not proc.is_alive():
+        # if not proc.is_alive():f
         # print(proc.is_alive(), 4)
         # proc.run()
         # Thread(target=func).start()
@@ -530,10 +633,10 @@ if __name__ == '__main__':
         all_sprites.draw(screen)
         tiles_group.draw(screen)
         # and_testing.all_sprites.draw(screen)
-        and_testing.player_group.draw(screen)
+        # and_testing.player_group.draw(screen)
         player_group.draw(screen)
 
-        clock.tick(FPS)
+        clock.tick(80)
         pygame.display.flip()
 
 pygame.quit()

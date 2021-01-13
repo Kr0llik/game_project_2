@@ -3,17 +3,9 @@ import os
 import pygame
 from random import randint
 import more_testing
+
+
 # from testing import AnimatedSprite
-
-view = 'right'
-pygame.init()
-size = width, height = 1300, 900
-screen = pygame.display.set_mode(size)
-pygame.display.set_caption('game')
-# screen.fill((255, 255, 255))
-clock = pygame.time.Clock()
-player = None
-
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -34,27 +26,6 @@ def load_image(name, colorkey=None):
 
 # группы спрайтов
 
-all_sprites = pygame.sprite.Group()
-tiles_group = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
-
-player = pygame.image.load("data/tiles.png")
-player = pygame.transform.scale(player, (500, 500))
-
-cropped = pygame.Surface((75, 75))
-
-cropped.blit(player, (-5, -25))
-
-tile_images = {
-    'wall': load_image('box.png'),
-    'empty': cropped
-}
-bot_image = load_image('Run (322x32).png')
-
-tile_width = tile_height = 50
-max_height = height // tile_height
-max_width = width // tile_width
-
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
@@ -62,8 +33,6 @@ class Tile(pygame.sprite.Sprite):
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
-
-
 
 
 def move(bot_p, move):
@@ -137,6 +106,37 @@ def load_level(filename):
 
 
 if __name__ == '__main__':
+
+    view = 'right'
+    pygame.init()
+    size = width, height = 1300, 900
+    screen = pygame.display.set_mode(size)
+    pygame.display.set_caption('game')
+    # screen.fill((255, 255, 255))
+    clock = pygame.time.Clock()
+    player = None
+
+    all_sprites = pygame.sprite.Group()
+    tiles_group = pygame.sprite.Group()
+    player_group = pygame.sprite.Group()
+
+    player = pygame.image.load("data/tiles.png")
+    player = pygame.transform.scale(player, (500, 500))
+
+    cropped = pygame.Surface((75, 75))
+
+    cropped.blit(player, (-5, -25))
+
+    tile_images = {
+        'wall': load_image('box.png'),
+        'empty': cropped
+    }
+    bot_image = load_image('Run (322x32).png')
+
+    tile_width = tile_height = 50
+    max_height = height // tile_height
+    max_width = width // tile_width
+
     level_map = load_level("level1.txt")
     bot, level_x, level_y = generate_level(level_map)
 
