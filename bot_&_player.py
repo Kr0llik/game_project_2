@@ -7,11 +7,11 @@ pygame.display.set_caption('game')
 screen.fill((255, 255, 255))
 
 
-player = pygame.image.load("data/Terrain (16x16).png")
+player = pygame.image.load("data/pol.png")
 
-cropped = pygame.Surface((30, 30))
+cropped = pygame.Surface((500, 500))
 
-cropped.blit(player, (-210, -80))
+cropped.blit(player, (-25, -25))
 
 while True:
     screen.blit(cropped, (250, 206))

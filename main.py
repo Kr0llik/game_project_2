@@ -10,6 +10,8 @@ screen = pygame.display.set_mode(size)
 pygame.display.set_caption('game')
 clock = pygame.time.Clock()
 player = None
+pygame.mixer.music.load("data/StPatrick.mp3")
+pygame.mixer.music.set_volume(0.04)
 
 
 def load_image(name, colorkey=None):
@@ -29,24 +31,22 @@ def load_image(name, colorkey=None):
     return image
 
 
-# группы спрайтов
-walls = []
-
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 
 player = pygame.image.load("data/Terrain (16x16).png")
+player2 = pygame.image.load("data/Purple.png")
+player2 = pygame.transform.scale(player2, (50, 50))
 
-cropped = pygame.Surface((30, 30))
+cropped = pygame.Surface((45, 45))
 
-cropped.blit(player, (-210, -80))
-
-cropped1 = pygame.image.load("data/purple.png")
+cropped.blit(player, (-273, -65))
+cropped = pygame.transform.scale(cropped, (50, 50))
 
 tile_images = {
-    'wall': load_image("box.png"),
-    'empty': cropped1
+    'wall': cropped,
+    'empty': player2
 }
 player_image = load_image('Run (32x32).png')
 bot_image = load_image('Run (322x32).png')
@@ -80,7 +80,7 @@ class Player(pygame.sprite.Sprite):
         self.pos = (pos_x, pos_y)
 
     def cut_sheet(self, sheet, columns, rows, pos_x, pos_y):
-        self.rect = pygame.Rect(pos_x, pos_y, sheet.get_width() // columns,
+        self.rect = pygame.Rect(pos_x + 7, pos_y + 7, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
@@ -112,7 +112,7 @@ class Player_bot(pygame.sprite.Sprite):
         self.pos = (pos_x, pos_y)
 
     def cut_sheet(self, sheet, columns, rows, pos_x, pos_y):
-        self.rect = pygame.Rect(pos_x, pos_y,
+        self.rect = pygame.Rect(pos_x + 7, pos_y + 7,
                                 sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
@@ -153,16 +153,13 @@ def generate_level_bot(level):
     new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
-            # print(x, y)
             if level[y][x] in '@.':
                 Tile('empty', x, y)
             elif level[y][x] == '#':
                 Tile('wall', x, y)
             elif level[y][x] == '!':
-                print(x, y)
                 Tile('empty', x, y)
                 new_player = Player_bot(x * tile_width, y * tile_height)
-    # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
 
@@ -185,22 +182,11 @@ def move(player, move):
             player.move(x + 1, y, turn='right')
 
 
-FPS = 50
-
-
-def settings():
-    screen.blit(fon, (0, 0))
-    screen.blit(label_font.render(u'Назад', 1, (210, 200, 200)), (580, 650))
-
-
 def select_level():
     screen.blit(fon, (0, 0))
     for i in range(1, 11):
         screen.blit(label_font.render(str(i), 1, (210, 200, 200)), (350 + 50 * i, 250))
     screen.blit(label_font.render(u'Назад', 1, (210, 200, 200)), (580, 650))
-
-    # pygame.draw.rect(screen, (210, 200, 200),
-    #                  (175, 225, 50, 50), 1)
 
 
 def new_game_f():
@@ -216,24 +202,21 @@ def menu():
     screen.blit(label_font.render(u'Играть', 1, (210, 200, 200)), (585, 250))
     screen.blit(label_font.render(u'Новая игра', 1, (210, 200, 200)), (565, 350))
     screen.blit(label_font.render(u'Выбор уровня', 1, (210, 200, 200)), (555, 450))
-    screen.blit(label_font.render(u'Настройки', 1, (210, 200, 200)), (555, 550))
-    screen.blit(label_font.render(u'Выход', 1, (210, 200, 200)), (585, 650))
+    screen.blit(label_font.render(u'Выход', 1, (210, 200, 200)), (585, 550))
 
 
 def start_screen():
     screen.blit(fon, (0, 0))
 
-    flag_select_level, flag_new_game, flag_settings = False, False, False
+    flag_select_level, flag_new_game = False, False
 
     menu()
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                print('exit')
                 quit()
 
-            if not flag_select_level and not flag_new_game \
-                    and not flag_settings:
+            if not flag_select_level and not flag_new_game:
                 if event.type == pygame.MOUSEMOTION:
                     if 700 > event.pos[0] > 587 and 285 > event.pos[1] > 252:
                         screen.blit(label_font.render(u'Играть', 1, (47, 79, 79)), (585, 250))
@@ -241,10 +224,8 @@ def start_screen():
                         screen.blit(label_font.render(u'Новая игра', 1, (47, 79, 79)), (565, 350))
                     elif 782 > event.pos[0] > 537 and 495 > event.pos[1] > 442:
                         screen.blit(label_font.render(u'Выбор уровня', 1, (47, 79, 79)), (555, 450))
-                    elif 732 > event.pos[0] > 577 and 585 > event.pos[1] > 552:
-                        screen.blit(label_font.render(u'Настройки', 1, (47, 79, 79)), (555, 550))
-                    elif 700 > event.pos[0] > 587 and 685 > event.pos[1] > 652:
-                        screen.blit(label_font.render(u'Выход', 1, (47, 79, 79)), (585, 650))
+                    elif 700 > event.pos[0] > 587 and 585 > event.pos[1] > 552:
+                        screen.blit(label_font.render(u'Выход', 1, (47, 79, 79)), (585, 550))
                     else:
                         menu()
 
@@ -257,13 +238,8 @@ def start_screen():
                     elif 782 > event.pos[0] > 537 and 485 > event.pos[1] > 452:
                         select_level()
                         flag_select_level = True
-                    elif 732 > event.pos[0] > 577 and 585 > event.pos[1] > 552:
-                        settings()
-                        flag_settings = True
-                    elif 700 > event.pos[0] > 587 and 685 > event.pos[1] > 652:
+                    elif 700 > event.pos[0] > 587 and 585 > event.pos[1] > 552:
                         quit()
-
-                    # return  # начинаем игру
 
             elif flag_select_level:
                 if event.type == pygame.MOUSEMOTION:
@@ -279,6 +255,9 @@ def start_screen():
                     if 662 > event.pos[0] > 582 and 685 > event.pos[1] > 652:
                         flag_select_level = False
                         menu()
+                    elif 425 >= event.pos[0] >= 352 \
+                            and 290 >= event.pos[1] >= 252:
+                        return
 
             elif flag_new_game:
                 if event.type == pygame.MOUSEMOTION:
@@ -303,22 +282,8 @@ def start_screen():
                         flag_new_game = False
                         menu()
 
-            elif flag_settings:
-                if event.type == pygame.MOUSEMOTION:
-                    if 662 > event.pos[0] > 582 \
-                            and 685 > event.pos[1] > 652:
-                        screen.blit(label_font.render(u'Назад', 1, (47, 79, 79)), (580, 650))
-                    else:
-                        settings()
-
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if 662 > event.pos[0] > 582 \
-                            and 685 > event.pos[1] > 652:
-                        flag_settings = False
-                        menu()
-
         pygame.display.flip()
-        clock.tick(50)
+        clock.tick(60)
 
 
 def menu_lose():
@@ -340,7 +305,6 @@ def screen_won():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                print('exit')
                 quit()
 
             if event.type == pygame.MOUSEMOTION:
@@ -354,7 +318,7 @@ def screen_won():
                     return
 
         pygame.display.flip()
-        clock.tick(50)
+        clock.tick(60)
 
 
 def screen_lose():
@@ -364,7 +328,6 @@ def screen_lose():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                print('exit')
                 quit()
 
             if event.type == pygame.MOUSEMOTION:
@@ -378,7 +341,7 @@ def screen_lose():
                     return
 
         pygame.display.flip()
-        clock.tick(50)
+        clock.tick(60)
 
 
 def load_level(filename):
@@ -399,29 +362,23 @@ def get_next_pos_bot(pos, level):
     bot_pos = (pos[0] // tile_width, pos[1] // tile_height)
     while True:
         size_list_of_pos = len(list_of_pos)
-        # print(list_of_pos)
         for i in range(len(list_of_pos)):
-            # print(list_of_pos[i])
             if (list_of_pos[i][0] + 1, list_of_pos[i][1]) == bot_pos \
                     or (list_of_pos[i][0] - 1, list_of_pos[i][1]) == bot_pos \
                     or (list_of_pos[i][0], list_of_pos[i][1] - 1) == bot_pos \
                     or (list_of_pos[i][0], list_of_pos[i][1] + 1) == bot_pos:
-                # print(list_of_pos[i][0] * tile_width, list_of_pos[i][1] * tile_height, 1)
                 return (list_of_pos[i][0] * tile_width, list_of_pos[i][1] * tile_height)
             else:
-                # print(list_of_pos[i], list_of_pos[i][0] + 1, list_of_pos[i][1], max_height, max_width)
-                # print(level[list_of_pos[i][0] + 1][list_of_pos[i][1]])
-                if list_of_pos[i][0] < max_height - 1:
-                    # print(list_of_pos[i][0], max_height - 1)
+                if list_of_pos[i][0] < max_width - 1:
                     if level[list_of_pos[i][1]][list_of_pos[i][0] + 1] == '.' \
                             and (list_of_pos[i][0] + 1, list_of_pos[i][1]) not in list_of_pos:
                         list_of_pos.append((list_of_pos[i][0] + 1, list_of_pos[i][1]))
 
-                if list_of_pos[i][1] < max_width - 1 and level[list_of_pos[i][1] + 1][list_of_pos[i][0]] == '.' \
-                        and (list_of_pos[i][0], list_of_pos[i][1] + 1) not in list_of_pos:
-                    list_of_pos.append((list_of_pos[i][0], list_of_pos[i][1] + 1))
+                if list_of_pos[i][1] < max_height - 1:
+                    if level[list_of_pos[i][1] + 1][list_of_pos[i][0]] == '.' \
+                            and (list_of_pos[i][0], list_of_pos[i][1] + 1) not in list_of_pos:
+                        list_of_pos.append((list_of_pos[i][0], list_of_pos[i][1] + 1))
 
-                # print((list_of_pos[i][0], list_of_pos[i][1] - 1), level[list_of_pos[i][0]][list_of_pos[i][1] - 1])
                 if list_of_pos[i][1] > 0 and level[list_of_pos[i][1] - 1][list_of_pos[i][0]] == '.' \
                         and (list_of_pos[i][0], list_of_pos[i][1] - 1) not in list_of_pos:
                     list_of_pos.append((list_of_pos[i][0], list_of_pos[i][1] - 1))
@@ -431,7 +388,6 @@ def get_next_pos_bot(pos, level):
                     list_of_pos.append((list_of_pos[i][0] - 1, list_of_pos[i][1]))
 
         if size_list_of_pos == len(list_of_pos):
-            # print(pos, 2)
             return pos
 
 
@@ -492,7 +448,6 @@ def bot_go(pos, level, turn):
             bot.rect = bot.rect.move(2, 0)
             bot.pos = (bot.pos[0] + 2, bot.pos[1])
 
-    clock.tick(50)
     return turn
 
 
@@ -518,8 +473,6 @@ def bot_go_2(pos, level, turn):
 
     else:
         new_pos = get_next_pos_bot(pos, level)
-
-        # print(new_pos, turn)
 
         if new_pos[0] - pos[0] > 0:
             x = 1
@@ -549,7 +502,6 @@ def bot_go_2(pos, level, turn):
         bot.pos = (bot.pos[0] + (2 * x), bot.pos[1] + (2 * y))
         turn = (x, y)
 
-    clock.tick(50)
     return turn
 
 
@@ -576,108 +528,115 @@ def check_go(move):
 
 
 if __name__ == '__main__':
-    # while True:
-    start_screen()
-    screen.fill((0, 0, 0))
+    while True:
+        all_sprites = pygame.sprite.Group()
+        tiles_group = pygame.sprite.Group()
+        player_group = pygame.sprite.Group()
+        start_screen()
+        screen.fill((0, 0, 0))
 
-    level_map = load_level('level1.txt')
-    bot, level_x, level_y = generate_level_bot(level_map)
-    player, level_x, level_y = generate_level(level_map)
+        level_map = load_level('level1.txt')
+        bot, level_x, level_y = generate_level_bot(level_map)
+        player, level_x, level_y = generate_level(level_map)
 
-    running = True
+        running = True
 
-    flag = False
+        flag = False
 
-    tec_time = time.time()
+        tec_time = time.time()
 
-    turn, turn_2 = None, None
-    flag_result = None
+        turn, turn_2 = None, None
+        flag_result = None
 
-    while running:
-        if player.pos == bot.pos:
-            time.sleep(1)
-            flag_result = False
-            running = False
+        pygame.mixer.music.play(-1)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        while running:
+            if player.pos == bot.pos:
+                time.sleep(1)
+                flag_result = False
                 running = False
 
-        if time.time() - tec_time > 3:
-            turn_2 = bot_go_2(bot.pos, level_map, turn_2)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit()
 
-        if time.time() - tec_time > 60 and running:
-            running = False
-            flag_result = True
+            if time.time() - tec_time > 3:
+                turn_2 = bot_go_2(bot.pos, level_map, turn_2)
 
-        if not turn is None:
-            if (player.pos[0] % tile_width == 0
-                    and player.pos[1] % tile_height == 0):
-                turn = None
+            if time.time() - tec_time > 60 and running:
+                running = False
+                flag_result = True
+
+            if not turn is None:
+                if (player.pos[0] % tile_width == 0
+                        and player.pos[1] % tile_height == 0):
+                    turn = None
+                else:
+                    if turn == 'down':
+                        player.update(turn='down')
+                        player.rect = player.rect.move(0, 2)
+                        player.pos = (player.pos[0], player.pos[1] + 2)
+
+                    elif turn == 'up':
+                        player.update(turn='up')
+                        player.rect = player.rect.move(0, -2)
+                        player.pos = (player.pos[0], player.pos[1] - 2)
+
+
+                    elif turn == 'left':
+                        player.update(turn='left')
+                        player.rect = player.rect.move(-2, 0)
+                        player.pos = (player.pos[0] - 2, player.pos[1])
+
+
+                    elif turn == 'right':
+                        player.update(turn='right')
+                        player.rect = player.rect.move(2, 0)
+                        player.pos = (player.pos[0] + 2, player.pos[1])
+
             else:
-                if turn == 'down':
-                    player.update(turn='down')
-                    player.rect = player.rect.move(0, 2)
-                    player.pos = (player.pos[0], player.pos[1] + 2)
+                key = pygame.key.get_pressed()
 
-                elif turn == 'up':
-                    player.update(turn='up')
-                    player.rect = player.rect.move(0, -2)
-                    player.pos = (player.pos[0], player.pos[1] - 2)
+                if key[pygame.K_DOWN]:
+                    if check_go('down'):
+                        turn = 'down'
+                        player.update(turn='down')
+                        player.rect = player.rect.move(0, 2)
+                        player.pos = (player.pos[0], player.pos[1] + 2)
 
+                elif key[pygame.K_UP]:
+                    if check_go('up'):
+                        turn = 'up'
+                        player.update(turn='up')
+                        player.rect = player.rect.move(0, -2)
+                        player.pos = (player.pos[0], player.pos[1] - 2)
 
-                elif turn == 'left':
-                    player.update(turn='left')
-                    player.rect = player.rect.move(-2, 0)
-                    player.pos = (player.pos[0] - 2, player.pos[1])
+                elif key[pygame.K_LEFT]:
+                    if check_go('left'):
+                        turn = 'left'
+                        player.update(turn='left')
+                        player.rect = player.rect.move(-2, 0)
+                        player.pos = (player.pos[0] - 2, player.pos[1])
 
+                elif key[pygame.K_RIGHT]:
+                    if check_go('right'):
+                        turn = 'right'
+                        player.update(turn='right')
+                        player.rect = player.rect.move(2, 0)
+                        player.pos = (player.pos[0] + 2, player.pos[1])
 
-                elif turn == 'right':
-                    player.update(turn='right')
-                    player.rect = player.rect.move(2, 0)
-                    player.pos = (player.pos[0] + 2, player.pos[1])
+            screen.fill((0, 0, 0))
+            tiles_group.draw(screen)
+            player_group.draw(screen)
 
-        else:
-            key = pygame.key.get_pressed()
+            clock.tick(60)
+            pygame.display.flip()
 
-            if key[pygame.K_DOWN]:
-                if check_go('down'):
-                    turn = 'down'
-                    player.update(turn='down')
-                    player.rect = player.rect.move(0, 2)
-                    player.pos = (player.pos[0], player.pos[1] + 2)
-
-            elif key[pygame.K_UP]:
-                if check_go('up'):
-                    turn = 'up'
-                    player.update(turn='up')
-                    player.rect = player.rect.move(0, -2)
-                    player.pos = (player.pos[0], player.pos[1] - 2)
-
-            elif key[pygame.K_LEFT]:
-                if check_go('left'):
-                    turn = 'left'
-                    player.update(turn='left')
-                    player.rect = player.rect.move(-2, 0)
-                    player.pos = (player.pos[0] - 2, player.pos[1])
-
-            elif key[pygame.K_RIGHT]:
-                if check_go('right'):
-                    turn = 'right'
-                    player.update(turn='right')
-                    player.rect = player.rect.move(2, 0)
-                    player.pos = (player.pos[0] + 2, player.pos[1])
-
-        # all_sprites.draw(screen)
-        tiles_group.draw(screen)
-        player_group.draw(screen)
-
-        clock.tick(50)
-        pygame.display.flip()
-
-    if flag_result is False:
-        screen_lose()
-    elif flag_result is True:
-        screen_won()
+        screen.fill((0, 0, 0))
+        pygame.mixer.music.stop()
+        if flag_result is False:
+            screen_lose()
+        elif flag_result is True:
+            screen_won()
 
 pygame.quit()
